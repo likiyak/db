@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Database Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Optional: Ensure font consistency */
+        body { font-family: ui-sans-serif, system-ui, sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <div class="max-w-4xl mx-auto p-6 space-y-6">
+
+        <header class="bg-indigo-600 p-6 rounded-xl shadow-lg text-white">
+            <h1 class="text-3xl font-extrabold flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                </svg>
+                AI Database Architect Console
+            </h1>
+            <p class="mt-1 text-indigo-200">System Interface for the Highly Compressed (90% Reduction) LLM Storage.</p>
+        </header>
+
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-indigo-500">
+                <h3 class="text-sm font-medium text-gray-500">System Status</h3>
+                <p id="status" class="text-xl font-bold text-indigo-700 mt-1">Awaiting command</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-yellow-500">
+                <h3 class="text-sm font-medium text-gray-500">Model Storage Size</h3>
+                <p class="text-xl font-bold text-yellow-700 mt-1">28.00 GB</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-green-500">
+                <h3 class="text-sm font-medium text-gray-500">Deduplication Efficiency</h3>
+                <p class="text-xl font-bold text-green-700 mt-1">90% Reduction Achieved</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Execute AI Commands</h2>
+            
+            <p class="text-gray-600 mb-4">
+                This button sends the custom AI command code (Code **1**) to the backend API, which executes the complex, optimized reconstruction query in PostgreSQL.
+            </p>
+
+            <button id="loadButton" 
+                    class="w-full sm:w-auto px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-md 
+                           hover:bg-green-700 transition duration-150 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                <span id="buttonText">Load LLM Parameters (Command Code 1)</span>
+            </button>
+            
+            <div id="loadingIndicator" class="hidden mt-4 text-green-600 font-semibold flex items-center">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Executing complex database joins...
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl shadow-inner">
+            <h2 class="text-xl font-semibold text-gray-200 mb-3">System Console Output</h2>
+            <pre id="console" class="text-green-400 text-sm overflow-x-auto whitespace-pre-wrap"></pre>
+        </div>
+
+        <div class="bg-red-100 p-4 rounded-xl border border-red-400 hidden" id="diagnosticsBox">
+            <h2 class="text-lg font-bold text-red-700 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-.333-1.84 0-2.574 0L4.35 17c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                AI Diagnostic Report
+            </h2>
+            <p id="diagnosticsText" class="text-red-700 mt-2"></p>
+        </div>
+    </div>
+
+    <script>
+        const statusElement = document.getElementById('status');
+        const consoleElement = document.getElementById('console');
+        const loadButton = document.getElementById('loadButton');
+        const buttonText = document.getElementById('buttonText');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const diagnosticsBox = document.getElementById('diagnosticsBox');
+        const diagnosticsText = document.getElementById('diagnosticsText');
+
+        // --- IMPORTANT: Update this URL to your Python Flask server address ---
+        const API_ENDPOINT = 'http://127.0.0.1:5000/api/v1/execute_ai_command';
+        const LLM_MODEL_ID = 1;
+        const COMMAND_LOAD_MODEL = 1;
+
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            consoleElement.innerHTML += `[${time}] [${type.toUpperCase()}] ${message}\n`;
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+        }
+
+        function setStatus(message, isError = false) {
+            statusElement.textContent = message;
+            statusElement.className = isError ? 'text-xl font-bold text-red-700 mt-1' : 'text-xl font-bold text-indigo-700 mt-1';
+        }
+
+        function setDiagnostics(message, isVisible = true) {
+            diagnosticsText.textContent = message;
+            diagnosticsBox.classList.toggle('hidden', !isVisible);
+        }
+
+        async function executeLoadCommand() {
+            setStatus('Executing command (Code 1)...');
+            setDiagnostics('', false);
+            log('Initiating secure connection to Backend API...', 'info');
+
+            loadButton.disabled = true;
+            buttonText.textContent = 'Loading...';
+            loadingIndicator.classList.remove('hidden');
+
+            const payload = {
+                model_id: LLM_MODEL_ID,
+                command_code: COMMAND_LOAD_MODEL
+            };
+
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // SUCCESS PATH
+                    setStatus('Model Loaded and Ready for Inference', false);
+                    log(`API Response Received. Status: ${result.status}`, 'success');
+                    log(`Reconstructed Block Count: ${result.reconstructed_blocks}`, 'success');
+                    log(`Total reconstructed size: ${result.total_bytes_mb} MB (Simulated ${result.total_bytes_mb / 1024 * 28} GB)`, 'success');
+                    log('SUCCESS: LLM structure retrieved via custom AI command.', 'success');
+                } else {
+                    // API-REPORTED ERROR (e.g., Database Connection failed, SQL error)
+                    setStatus('Error: See Diagnostics', true);
+                    log(`API responded with error: ${result.error}`, 'error');
+                    setDiagnostics(`Database/Backend Error: The command failed. The AI diagnostic suggests checking the database connection details in the Python API. Error message: ${result.error || 'Unknown API Error'}`, true);
+                }
+
+            } catch (error) {
+                // NETWORK/FETCH ERROR (e.g., Flask server is not running)
+                setStatus('Fatal Error: Backend Offline', true);
+                log(`FATAL: Could not connect to API at ${API_ENDPOINT}.`, 'error');
+                setDiagnostics(`Communication Error: The web page could not reach the Python Flask server. The AI diagnostic recommends: 1. Ensure 'api_connector.py' is running. 2. Verify the API_ENDPOINT URL is correct.`, true);
+            } finally {
+                loadButton.disabled = false;
+                buttonText.textContent = 'Load LLM Parameters (Command Code 1)';
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadButton.addEventListener('click', executeLoadCommand);
+            log('System Console Initialized.', 'system');
+            log(`Current API Target: ${API_ENDPOINT}`, 'system');
+            setStatus('Awaiting command');
+        });
+    </script>
+</body>
+</html>
